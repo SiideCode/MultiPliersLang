@@ -8,7 +8,7 @@ class Main {
 	// it's only a test script rn
 	static function main() {
 		var lex = new ScanningLexer();
-		lex.setScript("
+		lex.setScriptString("
 			// oval
 			/*
 			boval
@@ -23,7 +23,7 @@ class Main {
 				var M:Int = 34;
 				var H:Float = 34.5;
 				var L:String = \" elo \";
-				var regexp = ~/[A-Z]/i;
+				var regexpr = ~/[A-Z]/i;
 
 				H += 2;
 
@@ -36,7 +36,7 @@ class Main {
 				H /= 2;
 
 				print(L);
-			}	
+			}
 		");
 		lex.nextToken();
 		trace("Any key to exit");

@@ -2,6 +2,7 @@
 --cpp bin
 --main Main
 -D HXCPP-GC-GENERATIONAL
+-D HAXE_OUTPUT_FILE="MultiPliers"
 --define HXCPP_GC_MOVING=1
 --define HXCPP_GC_DYNAMIC_SIZE=1
 --define HXCPP_GC_BIG_BLOCKS=1

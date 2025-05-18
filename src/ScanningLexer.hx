@@ -24,7 +24,6 @@ typedef Token = {
 	var pos:TokenPosition;
 }
 
-// Now I can put ANY DATA I want into each enum item, cause HAXE POWAH
 enum TokenT {
 	UNKNOWN(v:String);
 	EOF;
@@ -146,12 +145,14 @@ enum TokenT {
 	KEYWORD_OPERATOR;
 	KEYWORD_OVERLOAD;
 
-	// TODO: add "!" at the end as macro function identifier, AND this, then see what sticks more with me and maybe other people i guess? macro is just more obvious
+	// TODO: add "!" at the end as macro function identifier, AND this, then see what sticks more with me and maybe other people i guess? macro is just more obvious.
 	/*
 		TODO: also think of some fancy names for the "insert something in this place" and "mess with this entire thing's AST output"
 		types of macros (!/macro macros and @:build macros). Maybe something like "Insert Macro" and "Modification Macro"?
 		Sounds decent enough to me, and explains the way they work quite well.
 	 */
+	// haxe DOES support something like the "Insert" macros, but whatever. should probably think about the implementation stuff AFTER the parser is done, because macros work on the AST
+	// By default "Insert" macros should return expressions, so all of the return stuff is considered an expression
 	KEYWORD_MACRO;
 
 	// less keystrokes for constant variables than final
@@ -159,9 +160,12 @@ enum TokenT {
 	KEYWORD_VAR;
 	KEYWORD_FUNCTION;
 
-	// this is a modifier, and it also works with var, it's more common in other languages than final, so it's kinda easier to remember it
+	// this is a modifier, and it also works with var, it's more common in other languages than final, so it's kinda easier to remember it.
+	// works mostly like final in haxe.
+	// can also be applied to functions in classes (override prevention), or classes (extension prevention).
 	KEYWORD_CONST;
 
+	// maybe make it so that Null is guaranteed to be falsy and never truthy? kinda like null or nullptr (when converted to a bool) in C/C++. would be nice.
 	KEYWORD_NULL;
 
 	KEYWORD_TRUE;
@@ -194,8 +198,8 @@ enum TokenT {
 	KEYWORD_TRY;
 	KEYWORD_CATCH;
 
-	KEYWORD_UNTYPED;
-
+	// not needed i think, it's barely even useful (aside from code insertion), so instead make the native code insertion like in the JS haxe API (the syntax package)
+	// KEYWORD_UNTYPED
 	KEYWORD_NEW;
 
 	KEYWORD_CAST;
@@ -204,23 +208,33 @@ enum TokenT {
 	IDENT(v:String);
 }
 
+// TODO: put all these in a stack or something, because the old system with "current state" and "next state" is bad, just literally do a stack
 enum LexerState {
 	DEFAULT;
 
+	// search for token of a string start/end identifier
 	STRING_ID;
+	// string-only tokens
 	STRING;
 
+	// formatted-string-only tokens
 	FORMATTED_STRING;
+	// expression inside of a formatted string
 	FORMATTED_STRING_EXPRESSION;
 
+	// token of a comment start/end identifier
 	COMMENT_ID;
+	// comment-only tokens
 	COMMENT;
 
+	// regular expression tokens
 	REGULAR_EXPRESSION;
 
+	// just forces a line break return
 	LINE_BREAK;
 }
 
+// this lexer is sort of inspired by the Luau lexer
 class ScanningLexer {
 	private var string:String = "";
 	private var stringPos:Int = 0;
@@ -228,7 +242,7 @@ class ScanningLexer {
 
 	public function new() {}
 
-	public function setScript(s:String) {
+	public function setScriptString(s:String) {
 		string = s;
 		stringPos = 0;
 		filePos = {pos: 1, line: 1};
