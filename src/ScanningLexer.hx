@@ -278,7 +278,6 @@ class ScanningLexer {
 	}
 
 	private function checkIndentation(advance:Bool = true) {
-		var token:TokenT;
 		var len = 0;
 		var charToCheck = 0;
 
