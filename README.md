@@ -5,7 +5,7 @@ MultiPliers is a WIP language inspired by multiple other languages, but primaril
 
 ## Current development focus/goals
 
-Current focus of the project is porting the LuauScript lexer with some improvements to Haxe.
+Current focus of the project is porting the LuauScript lexer (with some improvements) to Haxe.
 
 ## The goal
 

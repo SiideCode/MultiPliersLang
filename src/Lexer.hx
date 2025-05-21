@@ -1,5 +1,6 @@
 package;
 
+import haxe.ds.GenericStack;
 import haxe.Exception;
 import haxe.Int64;
 
@@ -38,8 +39,10 @@ enum TokenT {
 
 	FLOAT(v:String);
 	POINT_FLOAT(v:String);
-	EULER_FLOAT(v:String);
-	POINT_EULER_FLOAT(v:String);
+	// sorry for the name mistake, never used it in my life :sob: (i'm embarrassed)
+	// like, who the hell works with numbers big enough to use this? 99.99999999% of the time you don't
+	ENGI_FLOAT(v:String);
+	POINT_ENGI_FLOAT(v:String);
 
 	INTEGER_INTERVAL;
 
@@ -86,13 +89,23 @@ enum TokenT {
 	// Comparison
 	EQUAL;
 	NOT_EQUAL;
+	// TODO: (this is a part of a type argument syntax, so i'll write it here). To replace the union types, there are type constraints and Either,
+	// but union types are nicer, and they're a part of Luau's type system, so it might be better to put some thought into it i guess?
+	// maybe they should even work without typechecking via monomorphization if there will ever even be a native (LLVM) target.
 	LESS;
 	LESS_OR_EQUAL;
 	GREATER;
 	GREATER_OR_EQUAL;
 	// Condition (3 args)
 	CONDITION;
-	// Pipe is either "=>" or
+	// Pipe will be either "=>" or "|>"?
+	// "|>" or "|" is more natural for a lot of people (thanks, bash, C++ and JS), but "=>" just looks better, and it's pretty much math-like.
+	// i'm not adding "<|" though, because it's confusing. it literally breaks the execution flow. it's confusing,
+	// because everything ALWAYS goes left to right, top to bottom, but this one time it just doesn't, it SUDDENLY goes backwards - right to left,
+	// and it adds complexity to the implementation.
+	// Also, instead of haxe's "for (k => v in iterable)" for key-value iteration, we're gonna use something like "for (k, v in iterable)".
+	// if i'm not lazy, might also include something like key value iterators, but you can have >2 values.
+	// map literal syntax should also be either '"string" = 0' or '"string": 0' instead of '"string" => 0'.
 	PIPE;
 
 	// -> for arrow functions and function types
@@ -101,7 +114,7 @@ enum TokenT {
 	SEMICOLON;
 	COLON;
 	COMMA;
-	// QUESTION_MARK plus DOT for safe traversal, basically a glorified null check
+	// QUESTION_MARK plus DOT for safe traversal, basically a glorified null check. sweet sweet syntax sugar, yum.
 	DOT;
 	QUESTION_MARK;
 
@@ -151,8 +164,10 @@ enum TokenT {
 		types of macros (!/macro macros and @:build macros). Maybe something like "Insert Macro" and "Modification Macro"?
 		Sounds decent enough to me, and explains the way they work quite well.
 	 */
-	// haxe DOES support something like the "Insert" macros, but whatever. should probably think about the implementation stuff AFTER the parser is done, because macros work on the AST
-	// By default "Insert" macros should return expressions, so all of the return stuff is considered an expression
+	// haxe DOES support something like the "Insert" macros, but whatever. should probably think about the implementation stuff AFTER the parser is done,
+	// because macros do things on the AST level.
+	// basically all macros should be like in haxe, but they might have less limitations and stuff.
+	// also i need to write GOOD docs.
 	KEYWORD_MACRO;
 
 	// less keystrokes for constant variables than final
@@ -160,10 +175,9 @@ enum TokenT {
 	KEYWORD_VAR;
 	KEYWORD_FUNCTION;
 
-	// this is a modifier, and it also works with var, it's more common in other languages than final, so it's kinda easier to remember it.
-	// works mostly like final in haxe.
-	// can also be applied to functions in classes (override prevention), or classes (extension prevention).
-	KEYWORD_CONST;
+	// this can be applied to functions in classes (override prevention), or classes (extension prevention).
+	// basically says that "this definition is set in stone, and you cannot change it or expand upon it"
+	KEYWORD_FINAL;
 
 	// maybe make it so that Null is guaranteed to be falsy and never truthy? kinda like null or nullptr (when converted to a bool) in C/C++. would be nice.
 	KEYWORD_NULL;
@@ -210,11 +224,11 @@ enum TokenT {
 
 // TODO: put all these in a stack or something, because the old system with "current state" and "next state" is bad, just literally do a stack
 enum LexerState {
-	DEFAULT;
+	NORMAL;
 
 	// search for token of a string start/end identifier
 	STRING_ID;
-	// string-only tokens
+	// string-only tokens (escapes and stuff)
 	STRING;
 
 	// formatted-string-only tokens
@@ -235,12 +249,16 @@ enum LexerState {
 }
 
 // this lexer is sort of inspired by the Luau lexer
-class ScanningLexer {
+class Lexer {
 	private var string:String = "";
 	private var stringPos:Int = 0;
 	private var filePos:Position = {pos: 1, line: 1};
 
-	public function new() {}
+	private var states:GenericStack<LexerState> = new GenericStack();
+
+	public function new() {
+		states.add(NORMAL);
+	}
 
 	public function setScriptString(s:String) {
 		string = s;
@@ -256,6 +274,18 @@ class ScanningLexer {
 			endLine: filePos.line
 		}
 
+		switch states.first() {
+			case NORMAL:
+				return normalToken(tokenPos);
+			// case STRING_ID:
+			// return stringId(tokenPos);
+			default:
+				throw new LexerException("No lexer state was set, or behaviour for the current state is unimplemented!! Current state: "
+					+ states.first().getName(), UNKNOWN(""));
+		}
+	}
+
+	private function normalToken(tokenPos:TokenPosition) {
 		if ((string == "") || (string == null) || (filePos.pos > string.length))
 			return EOF;
 		else if (checkNewline(false) != null) {
@@ -266,6 +296,7 @@ class ScanningLexer {
 			while (~/[-_a-z0-9]/i.match(char())) {}
 			return IDENT("");
 		} else {
+			// TODO: make sure that it moves on when there's an exception
 			final char = char();
 			throw new LexerException('Encountered unknown token "${char}" .', UNKNOWN(char));
 		}

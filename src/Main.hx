@@ -1,13 +1,13 @@
 package;
 
-import ScanningLexer;
+import Lexer;
 import cpp.link.StaticStd;
 import cpp.link.StaticRegexp;
 
 class Main {
 	// it's only a test script rn
 	static function main() {
-		var lex = new ScanningLexer();
+		var lex = new Lexer();
 		lex.setScriptString("
 			// oval
 			/*
