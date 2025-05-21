@@ -40,9 +40,10 @@ enum TokenT {
 	FLOAT(v:String);
 	POINT_FLOAT(v:String);
 	// sorry for the name mistake, never used it in my life :sob: (i'm embarrassed)
-	// like, who the hell works with numbers big enough to use this? 99.99999999% of the time you don't
-	ENGI_FLOAT(v:String);
-	POINT_ENGI_FLOAT(v:String);
+	// like, who the hell works with numbers big enough to use this? 99.99999999% of the time you don't (i'm coping)
+	// thankfully stack overflow exists :sob:*99999
+	EXPONENTIAL_FLOAT(v:String);
+	POINT_EXPONENTIAL_FLOAT(v:String);
 
 	INTEGER_INTERVAL;
 
