@@ -2,11 +2,12 @@
 --cpp bin
 --main Main
 -D HXCPP-GC-GENERATIONAL
--D HAXE_OUTPUT_FILE="MultiPliers"
+-D HAXE_OUTPUT_FILE=MultiPliers
 --define HXCPP_GC_MOVING=1
 --define HXCPP_GC_DYNAMIC_SIZE=1
 --define HXCPP_GC_BIG_BLOCKS=1
 --define exe_link=1
 --define HXCPP_M64=1
 --define HXCPP_VERBOSE=1
+--verbose
 # -D scriptable
