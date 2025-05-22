@@ -2,22 +2,21 @@ package;
 
 import haxe.ds.GenericStack;
 import haxe.Exception;
-import haxe.Int64;
 
 using StringTools;
 
 // This is a position type for the lexer to realise where it is in the file
 typedef Position = {
-	var pos:Int64;
-	var line:Int64;
+	var pos:Int;
+	var line:Int;
 }
 
 // Token position
 typedef TokenPosition = {
-	var startPos:Int64;
-	var endPos:Int64;
-	var startLine:Int64;
-	var endLine:Int64;
+	var startPos:Int;
+	var endPos:Int;
+	var startLine:Int;
+	var endLine:Int;
 }
 
 typedef Token = {
@@ -39,7 +38,7 @@ enum TokenT {
 
 	FLOAT(v:String);
 	POINT_FLOAT(v:String);
-	// sorry for the name mistake, never used it in my life :sob: (i'm embarrassed)
+	// sorry for the naming mistake, never used it in my life :sob: (i'm embarrassed)
 	// like, who the hell works with numbers big enough to use this? 99.99999999% of the time you don't (i'm coping)
 	// thankfully stack overflow exists :sob:*99999
 	EXPONENTIAL_FLOAT(v:String);
@@ -49,7 +48,18 @@ enum TokenT {
 
 	COMMENT;
 	COMMENT_MULTILINE;
+	// maybe write a simple (separate) markdown parser JUST for the language server extension?
+	// i put so much thought into tools because, well,
+	// in modern times if you don't have working IDE tools for a programming language - you might as well not have that language.
+	// most people aren't going to use your language without tools, unless you ALREADY have projects that use it, AND they're popular enough.
+	// also infrastructure needs time to get built, and the speed depends on how many active language users are there.
 	COMMENT_CONTENT(v:String);
+
+	STRING;
+	STRING_FORMATTED;
+	STRING_CONTENT(v:String);
+	// invalid escapes are escapes too
+	STRING_ESCAPE(v:String);
 
 	// Unary
 	INCREMENT;
@@ -92,22 +102,26 @@ enum TokenT {
 	NOT_EQUAL;
 	// TODO: (this is a part of a type argument syntax, so i'll write it here). To replace the union types, there are type constraints and Either,
 	// but union types are nicer, and they're a part of Luau's type system, so it might be better to put some thought into it i guess?
-	// maybe they should even work without typechecking via monomorphization if there will ever even be a native (LLVM) target.
+	// maybe they should even work without typechecking via monomorphization if there will ever even be a native (LLVM) target,
+	// or some target that isn't dynamic in terms of types.
 	LESS;
 	LESS_OR_EQUAL;
 	GREATER;
 	GREATER_OR_EQUAL;
 	// Condition (3 args)
 	CONDITION;
-	// Pipe will be either "=>" or "|>"?
+	// Pipe will be either "=>" or "|>", idk
 	// "|>" or "|" is more natural for a lot of people (thanks, bash, C++ and JS), but "=>" just looks better, and it's pretty much math-like.
-	// i'm not adding "<|" though, because it's confusing. it literally breaks the execution flow. it's confusing,
-	// because everything ALWAYS goes left to right, top to bottom, but this one time it just doesn't, it SUDDENLY goes backwards - right to left,
-	// and it adds complexity to the implementation.
-	// Also, instead of haxe's "for (k => v in iterable)" for key-value iteration, we're gonna use something like "for (k, v in iterable)".
+	// i'm not adding "<|" though, because it's confusing, it literally breaks the execution flow. it's confusing,
+	// because everything ALWAYS goes left to right, top to bottom, but this one time it just doesn't, it SUDDENLY goes backwards - right to left.
+	// also it adds complexity to the implementation.
+	// Also, instead of haxe's "for (k => v in iterable)" for key-value iteration, use something like "for (k, v in iterable)".
 	// if i'm not lazy, might also include something like key value iterators, but you can have >2 values.
 	// map literal syntax should also be either '"string" = 0' or '"string": 0' instead of '"string" => 0'.
 	PIPE;
+
+	// for var/expr insertion into strings, and sweet syntax sugar for expression construction in macros
+	DOLLAR;
 
 	// -> for arrow functions and function types
 	ARROW;
@@ -151,6 +165,7 @@ enum TokenT {
 	KEYWORD_EXTERN;
 
 	KEYWORD_PRIVATE;
+	// think about making everything public by default, unless specified. like, most defenitions you make in most languages have to be public anyways.
 	KEYWORD_PUBLIC;
 	KEYWORD_STATIC;
 
@@ -167,8 +182,8 @@ enum TokenT {
 	 */
 	// haxe DOES support something like the "Insert" macros, but whatever. should probably think about the implementation stuff AFTER the parser is done,
 	// because macros do things on the AST level.
-	// basically all macros should be like in haxe, but they might have less limitations and stuff.
-	// also i need to write GOOD docs.
+	// basically all macros should be like in haxe, but they might just be nicer and stuff.
+	// also i need to write GOOD docs, because haxe docs are lacking in a lot of places tbh.
 	KEYWORD_MACRO;
 
 	// less keystrokes for constant variables than final
@@ -223,7 +238,6 @@ enum TokenT {
 	IDENT(v:String);
 }
 
-// TODO: put all these in a stack or something, because the old system with "current state" and "next state" is bad, just literally do a stack
 enum LexerState {
 	NORMAL;
 
