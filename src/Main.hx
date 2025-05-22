@@ -1,8 +1,10 @@
 package;
 
 import Lexer;
+#if cpp
 import cpp.link.StaticStd;
 import cpp.link.StaticRegexp;
+#end
 
 class Main {
 	// it's only a test script rn
@@ -38,8 +40,12 @@ class Main {
 				print(L);
 			}
 		");
-		lex.nextToken();
-		trace("Any key to exit");
+		try {
+			lex.nextToken();
+		} catch (e:LexerException) {
+			Sys.println(e.message);
+		}
+		Sys.println("Any key to exit");
 		Sys.stdin().readLine();
 	}
 }
